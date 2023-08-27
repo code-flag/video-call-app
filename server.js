@@ -11,6 +11,7 @@ const io = require("socket.io")(server, {
 const { ExpressPeerServer } = require("peer");
 const opinions = {
   debug: true,
+  allow_discovery: true,
 }
 
 const Port = process.env.PORT || 3030;
