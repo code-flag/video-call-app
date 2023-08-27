@@ -16,6 +16,8 @@ const opinions = {
 app.use("/peerjs", ExpressPeerServer(server, opinions));
 app.use(express.static("public"));
 
+app.locals.classTitle = "JSS3/Mathematics wk2";
+
 app.get("/", (req, res) => {
   res.redirect(`/${uuidv4()}`);
 });

@@ -1,8 +1,25 @@
+const PRE = "DELTA"
+const SUF = "MEET"
+var room_id;
+var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+var local_stream;
+var screenStream;
+var peer = null;
+var currentPeer = null
+var screenSharing = false;
+
+
+
 const socket = io("/");
 const videoGrid = document.getElementById("video-grid");
 const myVideo = document.createElement("video");
 const showChat = document.querySelector("#showChat");
 const backBtn = document.querySelector(".header__back");
+
+
+const shareScreen = document.querySelector("#shareScreen");
+
+
 myVideo.muted = true;
 
 backBtn.addEventListener("click", () => {
@@ -23,7 +40,7 @@ const user = prompt("Enter your name");
 
 var peer = new Peer({
   host: '127.0.0.1',
-  port: 3030,
+  port: "3030",
   path: '/peerjs',
   config: {
     'iceServers': [
@@ -59,6 +76,7 @@ navigator.mediaDevices
     video: true,
   })
   .then((stream) => {
+    console.log("init");
     myVideoStream = stream;
     addVideoStream(myVideo, stream);
 
@@ -149,6 +167,17 @@ stopVideo.addEventListener("click", () => {
   }
 });
 
+
+shareScreen.addEventListener("click", () => {
+  if (screenSharing) {
+    stopScreenSharing();
+    shareScreen.classList.toggle("background__red");
+  }{
+    startScreenShare();
+    shareScreen.classList.toggle("background__red");
+  }
+});
+
 inviteButton.addEventListener("click", (e) => {
   prompt(
     "Copy this link and send it to people you want to meet with",
@@ -165,3 +194,42 @@ socket.on("createMessage", (message, userName) => {
         <span>${message}</span>
     </div>`;
 });
+
+
+
+function startScreenShare() {
+  if (screenSharing) {
+      stopScreenSharing()
+  }
+  navigator.mediaDevices.getDisplayMedia({ video: true }).then((stream) => {
+      screenStream = stream;
+      let videoTrack = screenStream.getVideoTracks()[0];
+      videoTrack.onended = () => {
+          stopScreenSharing()
+      }
+      if (peer) {
+          let sender = currentPeer.peerConnection.getSenders().find(function (s) {
+              return s.track.kind == videoTrack.kind;
+          })
+          sender.replaceTrack(videoTrack)
+          screenSharing = true
+      }
+      console.log(screenStream)
+  })
+}
+
+function stopScreenSharing() {
+  if (!screenSharing) return;
+  let videoTrack = local_stream.getVideoTracks()[0];
+  if (peer) {
+      let sender = currentPeer.peerConnection.getSenders().find(function (s) {
+          return s.track.kind == videoTrack.kind;
+      })
+      sender.replaceTrack(videoTrack)
+  }
+  screenStream.getTracks().forEach(function (track) {
+      track.stop();
+  });
+  screenSharing = false
+}
+
