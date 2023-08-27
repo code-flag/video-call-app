@@ -41,7 +41,7 @@ const user = prompt("Enter your name");
 var peer = new Peer({
   // host: '127.0.0.1',
   host: "https://jvs-video-app.onrender.com",
-  port: "3030",
+  port: "10000",
   path: '/peerjs',
   config: {
     'iceServers': [
