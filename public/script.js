@@ -9,8 +9,6 @@ var currentPeer = null
 var screenSharing = false;
 
 
-
-const socket = io("https://jvs-video-app.onrender.com/");
 const videoGrid = document.getElementById("video-grid");
 const myVideo = document.createElement("video");
 const showChat = document.querySelector("#showChat");
@@ -67,15 +65,13 @@ var peer = new Peer({
   //     }
   //   ]
   // },
-
-  config: {
-    iceServers: TWILIO_ICE_SERVERS,
-  },
   port: 443,
 
   debug: 3
 });
 
+
+const socket = io("/");
 let myVideoStream;
 navigator.mediaDevices
   .getUserMedia({
