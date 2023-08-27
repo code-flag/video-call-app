@@ -40,7 +40,7 @@ const user = prompt("Enter your name");
 
 var peer = new Peer({
   // host: '127.0.0.1',
-  host: "https://jvs-video-app.onrender.com",
+  host: "jvs-video-app.onrender.com",
   secure: true,
   // port: '',
   // path: '/peerjs',
@@ -67,6 +67,11 @@ var peer = new Peer({
   //     }
   //   ]
   // },
+
+  config: {
+    iceServers: TWILIO_ICE_SERVERS,
+  },
+  port: 443,
 
   debug: 3
 });
