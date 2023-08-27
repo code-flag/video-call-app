@@ -65,7 +65,7 @@ var peer = new Peer({
       }
     ]
   },
-  port: 443,
+  port: 10000,
 
   debug: 3
 });
