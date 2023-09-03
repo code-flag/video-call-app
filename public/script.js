@@ -44,7 +44,7 @@ var peer = new Peer({
   path: '/peerjs',
   port: 10000,
   debug: 3,
-  
+
   config: {
     'iceServers': [
       {
@@ -69,6 +69,14 @@ var peer = new Peer({
         urls: "turn:a.relay.metered.ca:443?transport=tcp",
         username: "eeb64afd49d5799fe41de5ac",
         credential: "IbwBDjAqpxDBfF1Y",
+      },
+      /**
+       * xpressTURN provides fast, free and reliable TURN servers for your WebRTC applications and services.
+       */
+      {
+        urls: "relay1.expressturn.com:3478",
+        username: "ef2S7F40GFP6W6N595",
+        credential: "2ETziG8YBuDvbrLt",
       },
   ]
   },
