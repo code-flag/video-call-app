@@ -42,7 +42,7 @@ var peer = new Peer({
   secure: true,
   // port: '',
   path: '/peerjs',
-  port: 10000,
+  port: 443,
   debug: 3,
 
   config: {
