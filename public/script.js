@@ -80,8 +80,6 @@ var peer = new Peer({
       },
   ]
   },
-  port: 10000,
-  debug: 3
 });
 
 
