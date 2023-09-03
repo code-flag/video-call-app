@@ -1,38 +1,83 @@
-<html>
-
-<head>
-    <title>Delta Meet</title>
-    <link rel="stylesheet" type="text/css" href="styles.css">
-</head>
-
-<body>
-    <h1 class="title">Delta Meet</h1>
-    <p id="notification" hidden></p>
-    <div class="entry-modal" id="entry-modal">
-        <p>Create or Join Meeting</p>
-        <input id="room-input" class="room-input" placeholder="Enter Room ID">
-        <div>
-            <button onclick="createRoom()">Create Room</button>
-            <button onclick="joinRoom()">Join Room</button>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Joy Virtual School</title>
+    <link rel="stylesheet" href="style.css" />
+    
+    <script src="https://kit.fontawesome.com/c939d0e917.js"></script>
+  
+    <script>
+      const ROOM_ID = "<%= roomId %>";
+      const Port = "<%= Port %>";
+    </script>
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo">
+        <div class="header__back">
+          <i class="fas fa-angle-left"></i>
         </div>
-    </div>
-    <div class="meet-area">
-        <!-- Remote Video Element-->
-        <video id="remote-video"></video>
+        <% if (classTitle) { %>
+          <h3><%= classTitle %>  is here!</h3>
+        <% } else { %>
+          <h3>Boohiss no classTitle!</h3>
+        <% } %>
+      </div>
+    </div>  
+    <div class="main">  
+    <div class="main__left">
+      <div class="videos__group">
+        <div id="video-grid">
 
-        <!-- Local Video Element-->
-        <video id="local-video"></video>
-        <div class="meet-controls-bar">
-            <button onclick="startScreenShare()">Screen Share</button>
         </div>
+      </div>
+      <div class="options">
+        <div class="options__left">
+          <div id="stopVideo" class="options__button">
+            <i class="fa fa-video-camera"></i>
+          </div>
+          <div id="muteButton" class="options__button">
+            <i class="fa fa-microphone"></i>
+          </div>
+
+          <div id="shareScreen" class="options__button">
+            <i class="fa fa-share-square"></i>
+          </div>
+
+          <div id="stopShareScreen" class="options__button">
+            <i class="fa fa-photo-video"></i>
+          </div>
+
+          <div id="showChat" class="options__button">
+            <i class="fa fa-comment"></i>
+          </div>
+        </div>
+        <div class="options__right">
+          <div id="inviteButton" class="options__button">
+            <i class="fas fa-user-plus"></i>
+          </div>
+        </div>
+      </div>
     </div>
-</body>
+    <div class="main__right">
+      <div class="main__chat_window">
+          <div class="messages">
 
-<script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
-<script src="script.js"></script>
+          </div>
+      </div>
+      <div class="main__message_container">
+        <input id="chat_message" type="text" autocomplete="off" placeholder="Type message here...">
+        <div id="send" class="options__button">
+          <i class="fa fa-plus" aria-hidden="true"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  </body>
 
-<!--  -->
-
-<script src="https://cdn.jsdelivr.net/npm/screenshot-desktop@1.15.0/index.min.js"></script>
-
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>;
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+  <script src="script.js"></script>
 </html>
