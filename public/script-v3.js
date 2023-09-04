@@ -8,7 +8,7 @@ var peer = null;
 var currentPeer = null
 var screenSharing = false;
 
-var byteLength = parseInt((str).replace(/=/g,"").length * 0.75);
+// var byteLength = parseInt((str).replace(/=/g,"").length * 0.75);
 function createRoom() {
     console.log("Creating Room")
     let room = document.getElementById("room-input").value;

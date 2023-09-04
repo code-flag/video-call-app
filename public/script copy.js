@@ -1,6 +1,6 @@
 const PRE = "DELTA"
 const SUF = "MEET"
-var room_id = ROOM_ID;
+var room_id;
 var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 var local_stream;
 var screenStream;
@@ -9,13 +9,16 @@ var currentPeer = null
 var screenSharing = false;
 
 
-const videoGrid = document.getElementById("videos__group");
+const videoGrid = document.getElementById("video-grid");
+const myVideo = document.createElement("video");
 const showChat = document.querySelector("#showChat");
 const backBtn = document.querySelector(".header__back");
 
 
 const shareScreen = document.querySelector("#shareScreen");
 
+
+myVideo.muted = true;
 
 backBtn.addEventListener("click", () => {
   document.querySelector(".main__left").style.display = "flex";
@@ -79,120 +82,55 @@ const user = prompt("Enter your name");
 //   },
 // });
 
-const socket = io("https://jvs-video-app.onrender.com");
+var peer = new Peer(room_id);
+peer.on("open", (id) => {
+  console.log('my id is' + id);
+  socket.emit("join-room", ROOM_ID, id, user);
+});
 
-function createRoom() {
-  console.log("Creating Room");
-  peer = new Peer(room_id)
-  peer.on('open', (id) => {
-      console.log("Peer Connected with ID: ", id)
-
-      getUserMedia({ video: true, audio: true }, (stream) => {
-          console.log("scrren rec", stream);
-          local_stream = stream;
-          setLocalStream(local_stream)
-      }, (err) => {
-          console.log(err)
-      })
+const socket = io("/");
+let myVideoStream;
+navigator.mediaDevices
+  .getUserMedia({
+    audio: true,
+    video: true,
   })
-  peer.on('call', (call) => {
-      call.answer(local_stream);
-      call.on('stream', (stream) => {
-          setRemoteStream(stream)
-      })
-      currentPeer = call;
-  })
-}
+  .then((stream) => {
+    console.log("init");
+    myVideoStream = stream;
+    addVideoStream(myVideo, stream);
 
-function joinRoom() {
-  peer = new Peer()
-  peer.on('open', (id) => {
-      console.log("Connected with Id: " + id)
-      getUserMedia({ video: true, audio: true }, (stream) => {
-          local_stream = stream;
-          setLocalStream(local_stream)
+    peer.on("call", (call) => {
+      console.log('someone call me');
+      call.answer(stream);
+      const video = document.createElement("video");
+      call.on("stream", (userVideoStream) => {
+        addVideoStream(video, userVideoStream);
+      });
+    });
 
-          let call = peer.call(room_id, stream)
-          call.on('stream', (stream) => {
-              setRemoteStream(stream);
-          })
-          currentPeer = call;
-      }, (err) => {
-          console.log(err)
-      })
-
-  })
-}
-
-
-function setLocalStream(stream) {
-
-  let video = document.createElement("video");
-  video.setAttribute("id", "local-video");
-  video.srcObject = stream;
-  video.muted = true;
-  video.addEventListener("loadedmetadata", () => {
-    video.play();
-    videoGrid.appendChild(video);
+    socket.on("user-connected", (userId) => {
+      connectToNewUser(userId, stream);
+    });
   });
-}
 
-function setRemoteStream(stream) {
-let id = new Date();
-id = "remote-video" + id.getMinutes();
-
+const connectToNewUser = (userId, stream) => {
+  console.log('I call someone' + userId);
+  const call = peer.call(userId, stream);
   const video = document.createElement("video");
-  video.setAttribute("id", id);
-  
+  call.on("stream", (userVideoStream) => {
+    addVideoStream(video, userVideoStream);
+  });
+};
+
+
+const addVideoStream = (video, stream) => {
   video.srcObject = stream;
   video.addEventListener("loadedmetadata", () => {
     video.play();
-    videoGrid.appendChild(video);
+    videoGrid.append(video);
   });
- 
-}
-
-// navigator.mediaDevices
-//   .getUserMedia({
-//     audio: true,
-//     video: true,
-//   })
-//   .then((stream) => {
-//     console.log("init");
-//     myVideoStream = stream;
-//     addVideoStream(myVideo, stream);
-
-//     peer.on("call", (call) => {
-//       console.log('someone call me');
-//       call.answer(stream);
-//       const video = document.createElement("video");
-//       call.on("stream", (userVideoStream) => {
-//         addVideoStream(video, userVideoStream);
-//       });
-//     });
-
-//     socket.on("user-connected", (userId) => {
-//       connectToNewUser(userId, stream);
-//     });
-//   });
-
-// const connectToNewUser = (userId, stream) => {
-//   console.log('I call someone' + userId);
-//   const call = peer.call(userId, stream);
-//   const video = document.createElement("video");
-//   call.on("stream", (userVideoStream) => {
-//     addVideoStream(video, userVideoStream);
-//   });
-// };
-
-
-// const addVideoStream = (video, stream) => {
-//   video.srcObject = stream;
-//   video.addEventListener("loadedmetadata", () => {
-//     video.play();
-//     videoGrid.append(video);
-//   });
-// };
+};
 
 let text = document.querySelector("#chat_message");
 let send = document.getElementById("send");
@@ -216,14 +154,14 @@ const inviteButton = document.querySelector("#inviteButton");
 const muteButton = document.querySelector("#muteButton");
 const stopVideo = document.querySelector("#stopVideo");
 muteButton.addEventListener("click", () => {
-  const enabled = local_stream.getAudioTracks()[0].enabled;
+  const enabled = myVideoStream.getAudioTracks()[0].enabled;
   if (enabled) {
-    local_stream.getAudioTracks()[0].enabled = false;
+    myVideoStream.getAudioTracks()[0].enabled = false;
     html = `<i class="fas fa-microphone-slash"></i>`;
     muteButton.classList.toggle("background__red");
     muteButton.innerHTML = html;
   } else {
-    local_stream.getAudioTracks()[0].enabled = true;
+    myVideoStream.getAudioTracks()[0].enabled = true;
     html = `<i class="fas fa-microphone"></i>`;
     muteButton.classList.toggle("background__red");
     muteButton.innerHTML = html;
@@ -231,14 +169,14 @@ muteButton.addEventListener("click", () => {
 });
 
 stopVideo.addEventListener("click", () => {
-  const enabled = local_stream.getVideoTracks()[0].enabled;
+  const enabled = myVideoStream.getVideoTracks()[0].enabled;
   if (enabled) {
-    local_stream.getVideoTracks()[0].enabled = false;
+    myVideoStream.getVideoTracks()[0].enabled = false;
     html = `<i class="fas fa-video-slash"></i>`;
     stopVideo.classList.toggle("background__red");
     stopVideo.innerHTML = html;
   } else {
-    local_stream.getVideoTracks()[0].enabled = true;
+    myVideoStream.getVideoTracks()[0].enabled = true;
     html = `<i class="fas fa-video"></i>`;
     stopVideo.classList.toggle("background__red");
     stopVideo.innerHTML = html;
@@ -257,14 +195,10 @@ shareScreen.addEventListener("click", () => {
 });
 
 inviteButton.addEventListener("click", (e) => {
-
-  // prompt(
-  //   "Copy this link and send it to people you want to meet with",
-  //   window.location.href
-  // );
-
-  navigator.clipboard.writeText(window.location.href);
-  alert("Meeting link copied to clipboard \n" + window.location.href)
+  prompt(
+    "Copy this link and send it to people you want to meet with",
+    window.location.href
+  );
 });
 
 socket.on("createMessage", (message, userName) => {
@@ -313,12 +247,5 @@ function stopScreenSharing() {
       track.stop();
   });
   screenSharing = false
-}
-
-if (isRoomCreated === "true" || isRoomCreated === true) {
-  joinRoom()
-}
-else {
-  createRoom()
 }
 

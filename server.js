@@ -9,26 +9,39 @@ const io = require("socket.io")(server, {
   }
 });
 const { ExpressPeerServer } = require("peer");
+const path = require("path");
 const opinions = {
   debug: true,
   allow_discovery: true,
 }
 
+let isRoomCreated = false;
+
 const Port = process.env.PORT || 3030;
 
 
 app.use("/peerjs", ExpressPeerServer(server, opinions));
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.locals.classTitle = "JSS3/Mathematics wk2";
 
 app.get("/", (req, res) => {
+  console.log("yesss");
   res.redirect(`/${uuidv4()}`);
 });
 
+
 app.get("/:room", (req, res) => {
-  res.render("room", { roomId: req.params.room, Port: Port });
+let mid = req.params.room.split("__");
+roomId = mid[0];
+isRoomCreated = mid[1] ? true: false;
+
+console.log("iscreated", mid[1], isRoomCreated);
+  // res.render("room", { roomId: roomId, Port: Port, isRoomCreated:  isRoomCreated });
+  res.send({kk: "fdljio"})
 });
+
+
 
 io.on("connection", (socket) => {
   socket.on("join-room", (roomId, userId, userName) => {
