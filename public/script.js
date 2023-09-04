@@ -300,8 +300,10 @@ inviteButton.addEventListener("click", (e) => {
   //   window.location.href
   // );
 
-  navigator.clipboard.writeText(window.location.href);
-  alert("Meeting link copied to clipboard \n" + window.location.href);
+  let currentTime = new Date().getMilliseconds()
+
+  navigator.clipboard.writeText(window.location.href + "__" + currentTime);
+  alert("Meeting link copied to clipboard \n" + window.location.href + "__" + currentTime);
 });
 
 socket.on("createMessage", (message, userName) => {
