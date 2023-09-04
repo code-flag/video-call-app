@@ -11,6 +11,8 @@ var peer = null;
 var currentPeer = null;
 var screenSharing = false;
 const socket = io("/");
+var userPeerId = '';
+var mainUserPeerId = '';
 
 const videoGrid = document.getElementById("videos__group");
 const showChat = document.querySelector("#showChat");
@@ -32,7 +34,7 @@ showChat.addEventListener("click", () => {
   document.querySelector(".header__back").style.display = "block";
 });
 
-// const user = prompt("Enter your name");
+user = prompt("Enter your name");
 
 // var peer = new Peer({
 //   // host: '127.0.0.1',
@@ -85,11 +87,12 @@ function createRoom() {
   peer = new Peer(room_id);
   peer.on("open", (id) => {
     console.log("Peer Connected with ID: ", id);
+    userPeerId = id;
+    mainUserPeerId = id;
 
     getUserMedia(
       { video: true, audio: true },
       (stream) => {
-
         local_stream = stream;
         setLocalStream(local_stream);
 
@@ -97,7 +100,9 @@ function createRoom() {
         peer.on("call", (call) => {
           call.answer(stream);
           call.on("stream", (stream) => {
-            setRemoteStream(userId, stream);
+            console.log("streammmmm", stream);
+            userPeerId = stream.id
+            setRemoteStream(stream);
           });
           currentPeer = call;
         });
@@ -105,50 +110,67 @@ function createRoom() {
         // listen to all the connected user
 
         socket.on("user-connected", (userId) => {
-          console.log("user is connected", userId);
+          console.log("main", userPeerId, "connected", userId);
           connectToNewUser(userId, stream);
+        });
+
+        socket.on("new-screen-sharing", (userId) => {
+          rearrangeDivForScreenSharingDisplay(userId);
+        });
+
+        socket.on("new-screen-sharing-stopped", (userId) => {
+           removeScreenSharingDisplayClass(userId);
         });
       },
       (err) => {
         console.log(err);
       }
     );
-
     socket.emit("join-room", room_id, id, user);
-   
   });
-  
 }
-
 
 socket.on("socket-connected", (val) => {
   console.log("connection info: ", val);
-})
+});
 
 function joinRoom() {
   peer = new Peer();
   peer.on("open", (id) => {
     console.log("Connected with Id: " + id);
+    userPeerId = id;
+    mainUserPeerId = id;
+
+
     getUserMedia(
       { video: true, audio: true },
       (stream) => {
         local_stream = stream;
         setLocalStream(local_stream);
 
-        
-  peer.on("call", (call) => {
-    call.answer(local_stream);
-    call.on("stream", (stream) => {
-      setRemoteStream(stream);
-    });
-    currentPeer = call;
-  });
+        peer.on("call", (call) => {
+          call.answer(local_stream);
+          call.on("stream", (stream) => {
+            console.log("join streammmmm", stream);
+            setRemoteStream(stream);
+          });
+          currentPeer = call;
+        });
 
         socket.emit("join-room", room_id, id, user);
 
         socket.on("user-connected", (userId) => {
-          console.log("connected");
-          connectToNewUser(stream);
+          console.log("main", userPeerId, "connected", userId);
+          connectToNewUser(userId, stream);
+        });
+
+        
+        socket.on("new-screen-sharing", (userId) => {
+          rearrangeDivForScreenSharingDisplay(userId);
+        });
+
+        socket.on("new-screen-sharing-stopped", (userId) => {
+           removeScreenSharingDisplayClass(userId);
         });
       },
       (err) => {
@@ -160,7 +182,9 @@ function joinRoom() {
 
 const connectToNewUser = (userId, stream) => {
   const call = peer.call(userId, stream);
+  userPeerId = userId;
   call.on("stream", (userVideoStream) => {
+    console.log("streammmmm connect", stream);
     setRemoteStream(userVideoStream);
   });
   currentPeer = call;
@@ -179,10 +203,9 @@ function setLocalStream(stream) {
 
 function setRemoteStream(stream) {
   let id = new Date();
-  id = "remote-video" + id.getMinutes();
 
   const video = document.createElement("video");
-  video.setAttribute("id", id);
+  video.setAttribute("id", userPeerId);
 
   video.srcObject = stream;
   video.addEventListener("loadedmetadata", () => {
@@ -191,46 +214,21 @@ function setRemoteStream(stream) {
   });
 }
 
-// navigator.mediaDevices
-//   .getUserMedia({
-//     audio: true,
-//     video: true,
-//   })
-//   .then((stream) => {
-//     console.log("init");
-//     myVideoStream = stream;
-//     addVideoStream(myVideo, stream);
 
-//     peer.on("call", (call) => {
-//       console.log('someone call me');
-//       call.answer(stream);
-//       const video = document.createElement("video");
-//       call.on("stream", (userVideoStream) => {
-//         addVideoStream(video, userVideoStream);
-//       });
-//     });
+function rearrangeDivForScreenSharingDisplay(elementId){
+  let divId = "#videos__group " + "#" + elementId;
+  console.log("diiv", divId);
+  const elem = $(divId).remove().prependTo('#videos__group');
+  elem.prependTo("#videos__group");
+  elem.addClass("shared-screen");
+}
 
-//     socket.on("user-connected", (userId) => {
-//       connectToNewUser(userId, stream);
-//     });
-//   });
+function removeScreenSharingDisplayClass(elementId){
+  let divId = "#videos__group " + "#" + elementId;
+  console.log("dividd", divId);
+  const elem = $(divId).removeClass("shared-screen");
+}
 
-// const connectToNewUser = (userId, stream) => {
-//   console.log('I call someone' + userId);
-//   const call = peer.call(userId, stream);
-//   const video = document.createElement("video");
-//   call.on("stream", (userVideoStream) => {
-//     addVideoStream(video, userVideoStream);
-//   });
-// };
-
-// const addVideoStream = (video, stream) => {
-//   video.srcObject = stream;
-//   video.addEventListener("loadedmetadata", () => {
-//     video.play();
-//     videoGrid.append(video);
-//   });
-// };
 
 let text = document.querySelector("#chat_message");
 let send = document.getElementById("send");
@@ -287,10 +285,13 @@ shareScreen.addEventListener("click", () => {
   if (screenSharing) {
     stopScreenSharing();
     shareScreen.classList.toggle("background__red");
+    socket.emit("screen-sharing-stopped", room_id, mainUserPeerId)
   }
+  else
   {
     startScreenShare();
     shareScreen.classList.toggle("background__red");
+    socket.emit("screen-sharing", room_id, mainUserPeerId)
   }
 });
 
@@ -300,10 +301,15 @@ inviteButton.addEventListener("click", (e) => {
   //   window.location.href
   // );
 
-  let currentTime = new Date().getMilliseconds()
+  let currentTime = new Date().getMilliseconds();
 
   navigator.clipboard.writeText(window.location.href + "__" + currentTime);
-  alert("Meeting link copied to clipboard \n" + window.location.href + "__" + currentTime);
+  alert(
+    "Meeting link copied to clipboard \n" +
+      window.location.href +
+      "__" +
+      currentTime
+  );
 });
 
 socket.on("createMessage", (message, userName) => {

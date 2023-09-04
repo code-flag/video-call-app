@@ -58,7 +58,6 @@ if (!isRoomCreated) {
 });
 
 
-
 // io.on("connection", (socket) => {
 //   socket.on("join-room", (roomId, userId, userName) => {
 //     socket.join(roomId);
@@ -76,8 +75,6 @@ io.on("connection", (socket) => {
   socket.emit("socket-connected", "socket connected with id " + socket?.id);
   console.log("connected", socket.id);
 
-
-
   socket.on("join-room", (roomId, userId, userName) => {
     console.log("joined", roomId, userId, userName);
     socket.join(roomId);
@@ -85,9 +82,17 @@ io.on("connection", (socket) => {
     socket.on("message", (message) => {
       io.to(roomId).emit("createMessage", message, userName);
     });
-
-
   });
+
+  socket.on("screen-sharing", (roomId, id) => {
+    console.log("screen_shared");
+    socket.to(roomId).emit("new-screen-sharing", id);
+  } )
+
+  socket.on("screen-sharing-stopped", (roomId, id) => {
+    console.log("stooped");
+    socket.to(roomId).emit("new-screen-sharing-stopped", id);
+  } )
 });
 
 server.listen(Port, () => {
